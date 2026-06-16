@@ -1,36 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HealthFlow
 
-## Getting Started
+Plateforme SaaS pour praticiens de santé indépendants (kinés, ostéopathes, médecins, etc.).
 
-First, run the development server:
+## Fonctionnalités MVP
+
+- Landing page avec tarifs
+- Authentification Supabase (email/mot de passe)
+- Onboarding praticien (3 étapes)
+- Dashboard avec statistiques et alertes
+- Gestion patients (CRUD + segmentation auto)
+- Calendrier des rendez-vous
+- Questionnaires post-séance (lien public sécurisé)
+- Assistant IA (Claude) — résumés, questions, analyse risques
+- Paramètres cabinet
+- Emails via Resend (rappels, questionnaires)
+
+## Stack
+
+- **Frontend:** Next.js 14, TypeScript, TailwindCSS, Shadcn/ui, React Query, Recharts
+- **Backend:** Supabase (PostgreSQL + Auth)
+- **IA:** Claude API (claude-sonnet-4-6)
+- **Email:** Resend
+
+## Installation
+
+```bash
+npm install
+cp .env.example .env.local
+# Remplir les variables d'environnement
+```
+
+### Supabase
+
+1. Créer un projet sur [supabase.com](https://supabase.com)
+2. Exécuter `supabase/schema.sql` dans le SQL Editor
+3. Copier URL, anon key et service role key dans `.env.local`
+
+### Lancer en dev
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/
+│   ├── (auth)/          # Login, signup, forgot-password
+│   ├── (app)/           # Dashboard, patients, calendar, AI, settings
+│   ├── onboarding/      # Configuration initiale
+│   ├── q/[token]/       # Questionnaire public patient
+│   └── api/             # Routes API
+├── components/
+├── lib/                 # Supabase, IA, email, utils
+└── types/
+```
 
-## Learn More
+## Déploiement
 
-To learn more about Next.js, take a look at the following resources:
+- **Frontend:** Vercel
+- **Backend:** Supabase Cloud
+- Configurer les variables d'environnement sur Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Licence
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Propriétaire — HealthFlow
