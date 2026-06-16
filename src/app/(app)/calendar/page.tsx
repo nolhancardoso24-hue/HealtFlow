@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import {
+  addWeeks,
   format,
   startOfMonth,
   endOfMonth,
@@ -15,6 +16,7 @@ import {
   parseISO,
   setHours,
   setMinutes,
+  subWeeks,
 } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -60,11 +62,15 @@ export default function CalendarPage() {
   });
 
   const loadAppointments = useCallback(async () => {
-    const from = format(startOfMonth(currentDate), "yyyy-MM-dd");
-    const to = format(endOfMonth(currentDate), "yyyy-MM-dd");
+    const rangeStart =
+      view === "month" ? startOfMonth(currentDate) : startOfWeek(currentDate, { weekStartsOn: 1 });
+    const rangeEnd =
+      view === "month" ? endOfMonth(currentDate) : endOfWeek(currentDate, { weekStartsOn: 1 });
+    const from = format(rangeStart, "yyyy-MM-dd");
+    const to = format(rangeEnd, "yyyy-MM-dd");
     const res = await fetch(`/api/appointments?date_from=${from}&date_to=${to}`);
     setAppointments(await res.json());
-  }, [currentDate]);
+  }, [currentDate, view]);
 
   useEffect(() => {
     loadAppointments();
@@ -75,10 +81,26 @@ export default function CalendarPage() {
   const monthEnd = endOfMonth(currentDate);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+  const monthDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
 
   function getAppointmentsForDay(day: Date) {
     return appointments.filter((a) => isSameDay(parseISO(a.date_time), day));
+  }
+
+  const headerLabel =
+    view === "month"
+      ? format(currentDate, "MMMM yyyy", { locale: fr })
+      : `${format(weekStart, "d MMM", { locale: fr })} - ${format(weekEnd, "d MMM yyyy", { locale: fr })}`;
+
+  function goPrevious() {
+    setCurrentDate((prev) => (view === "month" ? subMonths(prev, 1) : subWeeks(prev, 1)));
+  }
+
+  function goNext() {
+    setCurrentDate((prev) => (view === "month" ? addMonths(prev, 1) : addWeeks(prev, 1)));
   }
 
   function openCreate(day?: Date) {
@@ -201,65 +223,110 @@ export default function CalendarPage() {
       </div>
 
       <div className="flex items-center justify-between">
-        <Button variant="outline" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+        <Button variant="outline" size="icon" onClick={goPrevious}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <h3 className="text-lg font-semibold capitalize">
-          {format(currentDate, "MMMM yyyy", { locale: fr })}
+          {headerLabel}
         </h3>
-        <Button variant="outline" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+        <Button variant="outline" size="icon" onClick={goNext}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="rounded-lg border bg-white">
-        <div className="grid grid-cols-7 border-b">
-          {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((d) => (
-            <div key={d} className="p-2 text-center text-sm font-medium text-muted-foreground">
-              {d}
-            </div>
-          ))}
+      {view === "month" ? (
+        <div className="rounded-lg border bg-white">
+          <div className="grid grid-cols-7 border-b">
+            {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((d) => (
+              <div key={d} className="p-2 text-center text-sm font-medium text-muted-foreground">
+                {d}
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {monthDays.map((day) => {
+              const dayAppts = getAppointmentsForDay(day);
+              const inMonth = isSameMonth(day, currentDate);
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={cn(
+                    "min-h-[100px] cursor-pointer border-b border-r p-1 hover:bg-slate-50",
+                    !inMonth && "bg-slate-50/50 text-muted-foreground"
+                  )}
+                  onDoubleClick={() => openCreate(day)}
+                >
+                  <span className="text-sm font-medium">{format(day, "d")}</span>
+                  <div className="mt-1 space-y-0.5">
+                    {dayAppts.slice(0, 3).map((apt) => (
+                      <div
+                        key={apt.id}
+                        className={cn(
+                          "truncate rounded px-1 py-0.5 text-xs text-white",
+                          statusColors[apt.status] ?? "bg-[#0066CC]"
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEdit(apt);
+                        }}
+                      >
+                        {format(parseISO(apt.date_time), "HH:mm")} {apt.patient?.first_name}
+                      </div>
+                    ))}
+                    {dayAppts.length > 3 && (
+                      <span className="text-xs text-muted-foreground">+{dayAppts.length - 3}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <div className="grid grid-cols-7">
-          {days.map((day) => {
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-7">
+          {weekDays.map((day) => {
             const dayAppts = getAppointmentsForDay(day);
-            const inMonth = isSameMonth(day, currentDate);
             return (
-              <div
-                key={day.toISOString()}
-                className={cn(
-                  "min-h-[100px] border-b border-r p-1 cursor-pointer hover:bg-slate-50",
-                  !inMonth && "bg-slate-50/50 text-muted-foreground"
-                )}
-                onDoubleClick={() => openCreate(day)}
-              >
-                <span className="text-sm font-medium">{format(day, "d")}</span>
-                <div className="mt-1 space-y-0.5">
-                  {dayAppts.slice(0, 3).map((apt) => (
-                    <div
-                      key={apt.id}
-                      className={cn(
-                        "truncate rounded px-1 py-0.5 text-xs text-white",
-                        statusColors[apt.status] ?? "bg-[#0066CC]"
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEdit(apt);
-                      }}
-                    >
-                      {format(parseISO(apt.date_time), "HH:mm")}{" "}
-                      {apt.patient?.first_name}
-                    </div>
-                  ))}
-                  {dayAppts.length > 3 && (
-                    <span className="text-xs text-muted-foreground">+{dayAppts.length - 3}</span>
+              <div key={day.toISOString()} className="rounded-lg border bg-white">
+                <div className="border-b p-3">
+                  <p className="text-sm font-medium capitalize">{format(day, "EEEE d MMM", { locale: fr })}</p>
+                </div>
+                <div className="space-y-2 p-3">
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => openCreate(day)}>
+                    Ajouter un RDV
+                  </Button>
+                  {dayAppts.length > 0 ? (
+                    dayAppts.map((apt) => (
+                      <button
+                        key={apt.id}
+                        type="button"
+                        onClick={() => openEdit(apt)}
+                        className="w-full rounded-lg border p-3 text-left transition-colors hover:bg-slate-50"
+                      >
+                        <div
+                          className={cn(
+                            "mb-2 inline-flex rounded-full px-2 py-0.5 text-xs text-white",
+                            statusColors[apt.status] ?? "bg-[#0066CC]"
+                          )}
+                        >
+                          {apt.status}
+                        </div>
+                        <p className="font-medium">{format(parseISO(apt.date_time), "HH:mm")}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {apt.patient?.first_name} {apt.patient?.last_name}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">{apt.reason ?? "Consultation"}</p>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Aucun rendez-vous ce jour.</p>
                   )}
                 </div>
               </div>
             );
           })}
         </div>
-      </div>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

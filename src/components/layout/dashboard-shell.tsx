@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Users,
   Calendar,
+  Globe,
   Bot,
   Settings,
   Menu,
@@ -18,20 +19,30 @@ import { NotificationBell } from "@/components/layout/notification-bell";
 import { TrialBanner } from "@/components/layout/trial-banner";
 import { useState } from "react";
 
-const navItems = [
+const primaryNavItems = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { href: "/patients", label: "Patients", icon: Users },
   { href: "/calendar", label: "Calendrier", icon: Calendar },
+  { href: "/booking", label: "Réservation en ligne", icon: Globe },
   { href: "/ai", label: "Assistant IA", icon: Bot },
+];
+
+const secondaryNavItems = [
   { href: "/settings", label: "Paramètres", icon: Settings },
 ];
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function NavLinkList({
+  items,
+  onNavigate,
+}: {
+  items: typeof primaryNavItems;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
     <nav className="flex flex-col gap-1">
-      {navItems.map(({ href, label, icon: Icon }) => (
+      {items.map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
@@ -69,8 +80,13 @@ export function DashboardShell({
           <Heart className="h-6 w-6 text-[#0066CC]" />
           <span className="text-lg font-bold text-[#0066CC]">HealthFlow</span>
         </div>
-        <div className="flex-1 p-4">
-          <NavLinks />
+        <div className="flex flex-1 flex-col p-4">
+          <div className="flex-1">
+            <NavLinkList items={primaryNavItems} />
+          </div>
+          <div className="border-t pt-4">
+            <NavLinkList items={secondaryNavItems} />
+          </div>
         </div>
       </aside>
 
@@ -89,8 +105,13 @@ export function DashboardShell({
                   <Heart className="h-6 w-6 text-[#0066CC]" />
                   <span className="text-lg font-bold text-[#0066CC]">HealthFlow</span>
                 </div>
-                <div className="p-4">
-                  <NavLinks onNavigate={() => setOpen(false)} />
+                <div className="flex h-full flex-col p-4">
+                  <div className="flex-1">
+                    <NavLinkList items={primaryNavItems} onNavigate={() => setOpen(false)} />
+                  </div>
+                  <div className="border-t pt-4">
+                    <NavLinkList items={secondaryNavItems} onNavigate={() => setOpen(false)} />
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

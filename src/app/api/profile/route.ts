@@ -18,9 +18,12 @@ async function getPractitionerId(supabase: Awaited<ReturnType<typeof createClien
 
 export async function GET() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const practitionerId = await getPractitionerId(supabase);
 
-  if (!practitionerId) {
+  if (!user || !practitionerId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -34,22 +37,40 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({
+    ...data,
+    email: user.email ?? "",
+  });
 }
 
 export async function PUT(request: Request) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const practitionerId = await getPractitionerId(supabase);
 
-  if (!practitionerId) {
+  if (!user || !practitionerId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
+  const nextEmail = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+
+  if (nextEmail && nextEmail !== (user.email ?? "").toLowerCase()) {
+    const { error: authError } = await supabase.auth.updateUser({ email: nextEmail });
+    if (authError) {
+      return NextResponse.json({ error: authError.message }, { status: 400 });
+    }
+  }
+
+  // `email` is stored on the auth user rather than the `profiles` row.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { email, ...profileUpdates } = body;
 
   const { data, error } = await supabase
     .from("profiles")
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({ ...profileUpdates, updated_at: new Date().toISOString() })
     .eq("id", practitionerId)
     .select()
     .single();
@@ -58,5 +79,8 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({
+    ...data,
+    email: nextEmail || user.email || "",
+  });
 }

@@ -13,9 +13,13 @@ import { createClient } from "@/lib/supabase/client";
 import { SPECIALTIES, SESSION_DURATIONS, DAYS_OF_WEEK } from "@/lib/constants";
 import type { Profile } from "@/types/database";
 
+type SettingsProfile = Partial<Profile> & {
+  email?: string;
+};
+
 export default function SettingsPage() {
   const router = useRouter();
-  const [profile, setProfile] = useState<Partial<Profile>>({});
+  const [profile, setProfile] = useState<SettingsProfile>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -34,8 +38,13 @@ export default function SettingsPage() {
       body: JSON.stringify(profile),
     });
 
-    if (res.ok) toast.success("Paramètres sauvegardés");
-    else toast.error("Erreur");
+    if (res.ok) {
+      setProfile(await res.json());
+      toast.success("Paramètres sauvegardés");
+    } else {
+      const payload = await res.json().catch(() => null);
+      toast.error(payload?.error ?? "Erreur");
+    }
     setLoading(false);
   }
 
@@ -97,6 +106,15 @@ export default function SettingsPage() {
               <Input
                 value={profile.phone ?? ""}
                 onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={profile.email ?? ""}
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                placeholder="prenom@cabinet.fr"
               />
             </div>
           </CardContent>
