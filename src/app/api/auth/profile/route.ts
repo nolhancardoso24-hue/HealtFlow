@@ -13,24 +13,18 @@ export async function POST(request: Request) {
 
   const body = await request.json();
 
-  const { data: existing } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (existing) {
-    return NextResponse.json({ profile: existing });
-  }
-
+  // Upsert: le trigger SQL peut déjà avoir créé le profil
   const { data, error } = await supabase
     .from("profiles")
-    .insert({
-      user_id: user.id,
-      first_name: body.first_name,
-      last_name: body.last_name,
-      specialty: body.specialty,
-    })
+    .upsert(
+      {
+        user_id: user.id,
+        first_name: body.first_name || "Praticien",
+        last_name: body.last_name || "",
+        specialty: body.specialty || "Autre",
+      },
+      { onConflict: "user_id", ignoreDuplicates: false }
+    )
     .select()
     .single();
 

@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { useState } from "react";
 
 const navItems = [
@@ -90,6 +91,9 @@ export function DashboardShell({
               </SheetContent>
             </Sheet>
             <h1 className="text-lg font-semibold">Bonjour, {practitionerName}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
           </div>
         </header>
         <main className="flex-1 p-4 lg:p-8">{children}</main>

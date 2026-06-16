@@ -1,4 +1,10 @@
 import { Resend } from "resend";
+import {
+  appointmentReminderHtml,
+  questionnaireInviteHtml,
+  questionnaireFollowUpHtml,
+  exerciseReminderHtml,
+} from "./templates";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const fromEmail = process.env.RESEND_FROM_EMAIL ?? "HealthFlow <onboarding@resend.dev>";
@@ -31,15 +37,16 @@ export function appointmentReminderEmail(params: {
   patientName: string;
   practitionerName: string;
   dateTime: string;
-}): { subject: string; html: string } {
+  confirmLink?: string;
+}) {
   return {
     subject: `Rappel: rendez-vous demain chez ${params.practitionerName}`,
-    html: `
-      <p>Bonjour ${params.patientName},</p>
-      <p>Petit rappel: vous avez rendez-vous demain à ${params.dateTime}.</p>
-      <p>À demain!</p>
-      <p><em>HealthFlow</em></p>
-    `,
+    html: appointmentReminderHtml({
+      patientName: params.patientName,
+      practitionerName: params.practitionerName,
+      dateFormatted: params.dateTime,
+      confirmLink: params.confirmLink,
+    }),
   };
 }
 
@@ -47,30 +54,35 @@ export function questionnaireInviteEmail(params: {
   patientName: string;
   practitionerName: string;
   link: string;
-}): { subject: string; html: string } {
+}) {
   return {
     subject: `${params.patientName}, comment vous sentez-vous après votre séance?`,
-    html: `
-      <p>Bonjour ${params.patientName},</p>
-      <p>Merci pour votre visite chez ${params.practitionerName}.</p>
-      <p>Prenez 2 minutes pour nous dire comment vous allez:</p>
-      <p><a href="${params.link}">Remplir le questionnaire</a></p>
-      <p><em>HealthFlow</em></p>
-    `,
+    html: questionnaireInviteHtml(params),
   };
 }
 
 export function questionnaireFollowUpEmail(params: {
   patientName: string;
   link: string;
-}): { subject: string; html: string } {
+}) {
   return {
-    subject: "Votre avis nous intéresse",
-    html: `
-      <p>Bonjour ${params.patientName},</p>
-      <p>Nous aimerions connaître votre ressenti après votre dernière séance.</p>
-      <p>Ça vous prend 2 min: <a href="${params.link}">Répondre au questionnaire</a></p>
-      <p><em>HealthFlow</em></p>
-    `,
+    subject: "Votre avis nous intéresse — 2 minutes suffisent",
+    html: questionnaireFollowUpHtml(params),
+  };
+}
+
+export function exerciseReminderEmail(params: {
+  patientEmail: string;
+  patientName: string;
+  exercises: string[];
+  nextAppointmentDate?: string;
+}) {
+  return {
+    subject: "N'oubliez pas vos exercices!",
+    html: exerciseReminderHtml({
+      patientName: params.patientName,
+      exercises: params.exercises,
+      nextAppointmentDate: params.nextAppointmentDate,
+    }),
   };
 }

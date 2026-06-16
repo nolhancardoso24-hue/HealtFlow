@@ -17,7 +17,7 @@ async function getPractitionerId(supabase: Awaited<ReturnType<typeof createClien
   return profile?.id ?? null;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
   const practitionerId = await getPractitionerId(supabase);
 
@@ -25,11 +25,31 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  const { searchParams } = new URL(request.url);
+  const search = searchParams.get("search")?.trim();
+  const status = searchParams.get("status");
+  const risk = searchParams.get("risk");
+  const tag = searchParams.get("tag");
+
+  let query = supabase
     .from("patients")
     .select("*")
-    .eq("practitioner_id", practitionerId)
-    .order("last_name");
+    .eq("practitioner_id", practitionerId);
+
+  // Recherche full-text
+  if (search) {
+    query = query.or(
+      `first_name.ilike.%${search}%,last_name.ilike.%${search}%,chief_complaint.ilike.%${search}%`
+    );
+  }
+
+  if (status) query = query.eq("status", status);
+  if (risk) query = query.gte("risk_score", Number(risk));
+  if (tag) query = query.contains("tags", [tag]);
+
+  query = query.order("last_name");
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
