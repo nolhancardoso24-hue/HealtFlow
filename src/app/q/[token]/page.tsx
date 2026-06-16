@@ -7,13 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Heart, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -153,21 +147,14 @@ export default function QuestionnairePage() {
 
             <div className="space-y-2">
               <Label>Exercices faits?</Label>
-              <Select
+              <NativeSelect
                 value={form.exercises_done}
-                onValueChange={(v) =>
-                  v && setForm({ ...form, exercises_done: v as "yes" | "partial" | "no" })
-                }
+                onChange={(e) => setForm({ ...form, exercises_done: e.target.value as "yes" | "partial" | "no" })}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Oui, régulièrement</SelectItem>
-                  <SelectItem value="partial">Partiellement</SelectItem>
-                  <SelectItem value="no">Non</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="yes">Oui, régulièrement</option>
+                <option value="partial">Partiellement</option>
+                <option value="no">Non</option>
+              </NativeSelect>
             </div>
 
             <div className="space-y-2">

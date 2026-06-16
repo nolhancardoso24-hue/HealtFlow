@@ -8,13 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart } from "lucide-react";
 import { toast } from "sonner";
@@ -124,19 +118,18 @@ export default function SignupPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Spécialité</Label>
-              <Select value={form.specialty} onValueChange={(v) => v && update("specialty", v)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir une spécialité" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SPECIALTIES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="specialty">Spécialité</Label>
+              <NativeSelect
+                id="specialty"
+                value={form.specialty}
+                onChange={(e) => update("specialty", e.target.value)}
+                placeholder="Choisir une spécialité"
+                required
+              >
+                {SPECIALTIES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </NativeSelect>
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

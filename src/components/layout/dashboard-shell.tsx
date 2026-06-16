@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { TrialBanner } from "@/components/layout/trial-banner";
 import { useState } from "react";
 
 const navItems = [
@@ -53,9 +54,11 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 export function DashboardShell({
   children,
   practitionerName,
+  trialDaysLeft,
 }: {
   children: React.ReactNode;
   practitionerName: string;
+  trialDaysLeft: number | null;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -72,6 +75,7 @@ export function DashboardShell({
       </aside>
 
       <div className="flex flex-1 flex-col">
+        {trialDaysLeft !== null && <TrialBanner daysLeft={trialDaysLeft} />}
         <header className="flex h-16 items-center justify-between border-b bg-white px-4 lg:px-8">
           <div className="flex items-center gap-3">
             <Sheet open={open} onOpenChange={setOpen}>

@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, ChevronRight, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -126,21 +120,14 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-2">
                 <Label>Durée standard séance</Label>
-                <Select
+                <NativeSelect
                   value={form.session_duration_minutes}
-                  onValueChange={(v) => v && update("session_duration_minutes", v)}
+                  onChange={(e) => update("session_duration_minutes", e.target.value)}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SESSION_DURATIONS.map((d) => (
-                      <SelectItem key={d} value={String(d)}>
-                        {d} minutes
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {SESSION_DURATIONS.map((d) => (
+                    <option key={d} value={String(d)}>{d} minutes</option>
+                  ))}
+                </NativeSelect>
               </div>
               <div className="space-y-2">
                 <Label>Jours fermés</Label>
@@ -158,15 +145,15 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-2">
                 <Label>Fuseau horaire</Label>
-                <Select value={form.timezone} onValueChange={(v) => v && update("timezone", v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Europe/Paris">Europe/Paris</SelectItem>
-                    <SelectItem value="Europe/London">Europe/London</SelectItem>
-                  </SelectContent>
-                </Select>
+                <NativeSelect
+                  value={form.timezone}
+                  onChange={(e) => update("timezone", e.target.value)}
+                >
+                  <option value="Europe/Paris">Europe/Paris</option>
+                  <option value="Europe/London">Europe/London</option>
+                  <option value="Europe/Brussels">Europe/Brussels</option>
+                  <option value="America/Montreal">America/Montreal</option>
+                </NativeSelect>
               </div>
             </div>
           )}
@@ -175,15 +162,13 @@ export default function OnboardingPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Langue</Label>
-                <Select value={form.language} onValueChange={(v) => v && update("language", v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fr">Français</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                  </SelectContent>
-                </Select>
+                <NativeSelect
+                  value={form.language}
+                  onChange={(e) => update("language", e.target.value)}
+                >
+                  <option value="fr">Français</option>
+                  <option value="en">English</option>
+                </NativeSelect>
               </div>
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -195,15 +180,13 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-2">
                 <Label>Format rapports</Label>
-                <Select value={form.report_format} onValueChange={(v) => v && update("report_format", v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="digital">Digital</SelectItem>
-                    <SelectItem value="paper">Papier (A4)</SelectItem>
-                  </SelectContent>
-                </Select>
+                <NativeSelect
+                  value={form.report_format}
+                  onChange={(e) => update("report_format", e.target.value)}
+                >
+                  <option value="digital">Digital</option>
+                  <option value="paper">Papier (A4)</option>
+                </NativeSelect>
               </div>
             </div>
           )}

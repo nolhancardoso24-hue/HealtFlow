@@ -11,6 +11,8 @@ export type PatientStatus = "active" | "inactive" | "archived";
 export type AppointmentStatus = "scheduled" | "completed" | "cancelled" | "no-show";
 export type RiskLevel = "low" | "medium" | "high" | "critical";
 export type ExercisesDone = "yes" | "partial" | "no";
+export type SubscriptionStatus = "trialing" | "active" | "expired" | "cancelled";
+export type SubscriptionPlan = "free" | "starter" | "pro";
 
 export interface Profile {
   id: string;
@@ -28,7 +30,10 @@ export interface Profile {
   timezone: string;
   email_reminders: boolean;
   sms_reminders: boolean;
-  subscription_plan: string;
+  subscription_plan: SubscriptionPlan;
+  subscription_status: SubscriptionStatus;
+  trial_ends_at: string | null;
+  subscription_ends_at: string | null;
   onboarding_completed: boolean;
   created_at: string;
   updated_at: string;

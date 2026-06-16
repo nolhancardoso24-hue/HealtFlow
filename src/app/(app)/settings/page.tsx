@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -89,21 +83,14 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>Spécialité</Label>
-              <Select
-                value={profile.specialty}
-                onValueChange={(v) => v && setProfile({ ...profile, specialty: v as Profile["specialty"] })}
+              <NativeSelect
+                value={profile.specialty ?? ""}
+                onChange={(e) => setProfile({ ...profile, specialty: e.target.value as Profile["specialty"] })}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SPECIALTIES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {SPECIALTIES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </NativeSelect>
             </div>
             <div className="space-y-2">
               <Label>Téléphone</Label>
@@ -140,23 +127,14 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>Durée séance standard</Label>
-              <Select
+              <NativeSelect
                 value={String(profile.session_duration_minutes ?? 45)}
-                onValueChange={(v) =>
-                  v && setProfile({ ...profile, session_duration_minutes: parseInt(v) })
-                }
+                onChange={(e) => setProfile({ ...profile, session_duration_minutes: parseInt(e.target.value) })}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SESSION_DURATIONS.map((d) => (
-                    <SelectItem key={d} value={String(d)}>
-                      {d} min
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {SESSION_DURATIONS.map((d) => (
+                  <option key={d} value={String(d)}>{d} min</option>
+                ))}
+              </NativeSelect>
             </div>
             <div className="space-y-2">
               <Label>Jours fermés</Label>

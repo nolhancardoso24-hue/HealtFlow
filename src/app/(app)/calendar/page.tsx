@@ -22,13 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect } from "@/components/ui/native-select";
 import {
   Dialog,
   DialogContent,
@@ -275,18 +269,16 @@ export default function CalendarPage() {
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
               <Label>Patient</Label>
-              <Select value={form.patient_id} onValueChange={(v) => v && setForm({ ...form, patient_id: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choisir un patient" />
-                </SelectTrigger>
-                <SelectContent>
-                  {patients.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.first_name} {p.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <NativeSelect
+                value={form.patient_id}
+                onChange={(e) => setForm({ ...form, patient_id: e.target.value })}
+                placeholder="Choisir un patient"
+                required
+              >
+                {patients.map((p) => (
+                  <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
+                ))}
+              </NativeSelect>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -310,21 +302,14 @@ export default function CalendarPage() {
             </div>
             <div className="space-y-2">
               <Label>Durée</Label>
-              <Select
+              <NativeSelect
                 value={form.duration_minutes}
-                onValueChange={(v) => v && setForm({ ...form, duration_minutes: v })}
+                onChange={(e) => setForm({ ...form, duration_minutes: e.target.value })}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SESSION_DURATIONS.map((d) => (
-                    <SelectItem key={d} value={String(d)}>
-                      {d} min
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                {SESSION_DURATIONS.map((d) => (
+                  <option key={d} value={String(d)}>{d} min</option>
+                ))}
+              </NativeSelect>
             </div>
             <div className="space-y-2">
               <Label>Motif</Label>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/supabase/server";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { getBillingState } from "@/lib/billing";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, profile } = await getProfile();
@@ -8,7 +9,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect("/login");
   if (profile && !profile.onboarding_completed) redirect("/onboarding");
 
-  const name = profile ? `${profile.first_name}` : "Praticien";
+  // Vérification de l'essai / abonnement
+  if (profile) {
+    const billing = getBillingState(profile);
+    if (billing.isExpired) {
+      redirect("/pricing?expired=true");
+    }
+  }
 
-  return <DashboardShell practitionerName={name}>{children}</DashboardShell>;
+  const name = profile ? `${profile.first_name}` : "Praticien";
+  const billing = profile ? getBillingState(profile) : null;
+
+  return (
+    <DashboardShell
+      practitionerName={name}
+      trialDaysLeft={billing?.isTrial ? billing.trialDaysLeft : null}
+    >
+      {children}
+    </DashboardShell>
+  );
 }
