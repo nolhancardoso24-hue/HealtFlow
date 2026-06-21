@@ -175,7 +175,7 @@ export function NotificationBell() {
   const { notifications, unreadCount, loading, markAsRead, markAllRead } = useNotifications();
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         render={
           <Button
@@ -204,7 +204,7 @@ export function NotificationBell() {
         sideOffset={10}
         collisionPadding={16}
         className={cn(
-          "w-[min(calc(100vw-1.5rem),400px)] min-w-[320px] overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-0",
+          "!w-[min(calc(100vw-1.5rem),400px)] min-w-[320px] max-w-[400px] overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-0",
           "shadow-[0_12px_40px_-12px_rgba(15,23,42,0.18)] ring-0",
           "origin-top duration-300 ease-out",
           "data-open:animate-in data-open:fade-in-0 data-open:slide-in-from-top-2",
