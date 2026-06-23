@@ -33,7 +33,12 @@ cp .env.example .env.local
 ### Supabase
 
 1. Créer un projet sur [supabase.com](https://supabase.com)
-2. Exécuter `supabase/schema.sql` dans le SQL Editor
+2. Exécuter les migrations dans le SQL Editor **dans l'ordre** :
+   - `supabase/migrations/001_initial_schema.sql`
+   - `supabase/migrations/002_triggers_functions.sql`
+   - `supabase/migrations/003_storage.sql`
+   - `supabase/migrations/004_billing.sql` *(essai gratuit 14 jours + abonnements)*
+   - `supabase/migrations/005_clinical_workflows.sql` *(praticiens, consultations SOAP, dossiers médicaux, workflows)*
 3. Copier URL, anon key et service role key dans `.env.local`
 
 ### Lancer en dev

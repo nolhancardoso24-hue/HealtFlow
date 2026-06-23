@@ -110,3 +110,66 @@ export interface DashboardAlert {
   type: "risk" | "trend" | "action";
   message: string;
 }
+
+export type MedicalRecordType =
+  | "allergy"
+  | "contraindication"
+  | "medical_history"
+  | "medication"
+  | "vital_sign"
+  | "diagnosis"
+  | "note"
+  | "other";
+
+export type WorkflowStatus = "active" | "paused" | "completed" | "cancelled";
+
+export type WorkflowType =
+  | "rehabilitation"
+  | "post_surgery"
+  | "chronic_followup"
+  | "prevention"
+  | "questionnaire_series"
+  | "custom";
+
+export interface Practitioner {
+  id: string;
+  profile_id: string;
+  cabinet_name: string | null;
+  practitioner_type: Specialty | null;
+  created_at: string;
+}
+
+export interface Consultation {
+  id: string;
+  appointment_id: string;
+  subjective_notes: string | null;
+  objective_notes: string | null;
+  assessment: string | null;
+  plan: string | null;
+  created_at: string;
+}
+
+export interface PatientMedicalRecord {
+  id: string;
+  patient_id: string;
+  record_type: MedicalRecordType;
+  value: string;
+  created_at: string;
+}
+
+export interface PatientWorkflow {
+  id: string;
+  patient_id: string;
+  workflow_type: WorkflowType;
+  status: WorkflowStatus;
+  next_action_date: string | null;
+  created_at: string;
+}
+
+export interface WorkflowStep {
+  id: string;
+  workflow_id: string;
+  step_name: string;
+  trigger_date: string | null;
+  completed: boolean;
+}
