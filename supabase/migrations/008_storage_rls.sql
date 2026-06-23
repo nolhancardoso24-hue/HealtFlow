@@ -3,7 +3,14 @@
 -- Bucket privé healthflow-documents
 -- Structure cible : documents/{practitioner_id}/{patient_id}/{filename}
 -- Compatibilité legacy : {practitioner_id}/{patient_id}/{filename} (app actuelle)
+-- Compatibilité migration 003 : ne supprime ni ne remplace les policies existantes
 -- Dépend de : 007_complete_rls.sql (current_practitioner_id)
+-- ============================================
+-- Notes :
+-- - Pas de DROP POLICY / COMMENT ON POLICY sur storage.objects (droits owner requis).
+-- - Les policies 003 ("Practitioner can …") sont conservées telles quelles.
+-- - Cette migration ajoute uniquement les policies nommées storage_documents_* si absentes.
+-- - PostgreSQL n'a pas CREATE POLICY IF NOT EXISTS : garde conditionnelle via pg_policies.
 -- ============================================
 
 -- ---------------------------------------------------------------------------
@@ -38,9 +45,6 @@ as $$
   )::uuid;
 $$;
 
-comment on function public.storage_object_practitioner_id(text) is
-  'Extrait profiles.id (praticien) depuis un chemin Storage HealthFlow.';
-
 -- Retourne l'UUID patient encodé dans le chemin storage.objects.name
 create or replace function public.storage_object_patient_id(object_path text)
 returns uuid
@@ -57,10 +61,7 @@ as $$
   )::uuid;
 $$;
 
-comment on function public.storage_object_patient_id(text) is
-  'Extrait patients.id depuis un chemin Storage HealthFlow.';
-
--- Vérifie que l''objet appartient au praticien connecté (auth.uid → profiles.user_id)
+-- Vérifie que l'objet appartient au praticien connecté (auth.uid → profiles.user_id)
 -- et que le patient référencé dans le chemin lui appartient bien.
 create or replace function public.storage_object_owned_by_current_practitioner(object_path text)
 returns boolean
@@ -80,83 +81,90 @@ as $$
     );
 $$;
 
-comment on function public.storage_object_owned_by_current_practitioner(text) is
-  'True si le chemin Storage correspond au praticien connecté et à un de ses patients.';
-
 -- ---------------------------------------------------------------------------
--- Suppression des policies Storage de la migration 003 (remplacées ci-dessous)
+-- Policies Storage (création conditionnelle — idempotent, sans DROP)
 -- ---------------------------------------------------------------------------
-drop policy if exists "Practitioner can upload documents" on storage.objects;
-drop policy if exists "Practitioner can read own documents" on storage.objects;
-drop policy if exists "Practitioner can delete own documents" on storage.objects;
 
--- Policies nommées de la migration 008 (idempotence si re-exécution partielle)
-drop policy if exists "storage_documents_select_own" on storage.objects;
-drop policy if exists "storage_documents_insert_own" on storage.objects;
-drop policy if exists "storage_documents_update_own" on storage.objects;
-drop policy if exists "storage_documents_delete_own" on storage.objects;
+-- SELECT : lecture / URLs signées — praticien propriétaire uniquement
+DO $policy$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename = 'objects'
+      AND policyname = 'storage_documents_select_own'
+  ) THEN
+    CREATE POLICY "storage_documents_select_own"
+      ON storage.objects FOR SELECT
+      USING (
+        bucket_id = 'healthflow-documents'
+        AND public.storage_object_owned_by_current_practitioner(name)
+      );
+  END IF;
+END
+$policy$;
 
--- ---------------------------------------------------------------------------
--- SELECT — lecture / URLs signées
--- Seul le praticien propriétaire du dossier peut lire ses fichiers.
--- Les utilisateurs non authentifiés et les autres praticiens sont bloqués.
--- Compatible avec documents.file_path (legacy ou préfixe documents/).
--- ---------------------------------------------------------------------------
-create policy "storage_documents_select_own"
-  on storage.objects for select
-  using (
-    bucket_id = 'healthflow-documents'
-    and public.storage_object_owned_by_current_practitioner(name)
-  );
+-- INSERT : upload — chemin = praticien connecté + patient qui lui appartient
+DO $policy$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename = 'objects'
+      AND policyname = 'storage_documents_insert_own'
+  ) THEN
+    CREATE POLICY "storage_documents_insert_own"
+      ON storage.objects FOR INSERT
+      WITH CHECK (
+        bucket_id = 'healthflow-documents'
+        AND public.storage_object_owned_by_current_practitioner(name)
+      );
+  END IF;
+END
+$policy$;
 
-comment on policy "storage_documents_select_own" on storage.objects is
-  'Lecture restreinte au praticien connecté (auth.uid → profiles). Empêche la lecture croisée entre comptes et l''accès public.';
+-- UPDATE : remplacement / métadonnées — espace praticien inchangé
+DO $policy$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename = 'objects'
+      AND policyname = 'storage_documents_update_own'
+  ) THEN
+    CREATE POLICY "storage_documents_update_own"
+      ON storage.objects FOR UPDATE
+      USING (
+        bucket_id = 'healthflow-documents'
+        AND public.storage_object_owned_by_current_practitioner(name)
+      )
+      WITH CHECK (
+        bucket_id = 'healthflow-documents'
+        AND public.storage_object_owned_by_current_practitioner(name)
+      );
+  END IF;
+END
+$policy$;
 
--- ---------------------------------------------------------------------------
--- INSERT — upload
--- Le chemin doit contenir le practitioner_id du compte connecté
--- et un patient_id qui lui appartient (cohérence avec la table documents).
--- Structure recommandée : documents/{practitioner_id}/{patient_id}/{filename}
--- ---------------------------------------------------------------------------
-create policy "storage_documents_insert_own"
-  on storage.objects for insert
-  with check (
-    bucket_id = 'healthflow-documents'
-    and public.storage_object_owned_by_current_practitioner(name)
-  );
-
-comment on policy "storage_documents_insert_own" on storage.objects is
-  'Upload autorisé uniquement dans le dossier du praticien connecté, pour un de ses patients. Bloque l''écriture dans le dossier d''un autre praticien.';
-
--- ---------------------------------------------------------------------------
--- UPDATE — remplacement ou déplacement de métadonnées
--- Même règle qu''à l''insertion : le chemin cible doit rester dans l''espace du praticien.
--- ---------------------------------------------------------------------------
-create policy "storage_documents_update_own"
-  on storage.objects for update
-  using (
-    bucket_id = 'healthflow-documents'
-    and public.storage_object_owned_by_current_practitioner(name)
-  )
-  with check (
-    bucket_id = 'healthflow-documents'
-    and public.storage_object_owned_by_current_practitioner(name)
-  );
-
-comment on policy "storage_documents_update_own" on storage.objects is
-  'Mise à jour autorisée uniquement sur les fichiers appartenant au praticien connecté. Empêche le déplacement vers un autre espace.';
-
--- ---------------------------------------------------------------------------
--- DELETE — suppression
--- Seul le propriétaire du dossier peut supprimer ses fichiers.
--- Aligné avec DELETE sur la table documents (file_path identique).
--- ---------------------------------------------------------------------------
-create policy "storage_documents_delete_own"
-  on storage.objects for delete
-  using (
-    bucket_id = 'healthflow-documents'
-    and public.storage_object_owned_by_current_practitioner(name)
-  );
-
-comment on policy "storage_documents_delete_own" on storage.objects is
-  'Suppression restreinte au praticien propriétaire du chemin. Empêche la suppression des fichiers d''un autre compte.';
+-- DELETE : suppression — propriétaire du chemin uniquement
+DO $policy$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename = 'objects'
+      AND policyname = 'storage_documents_delete_own'
+  ) THEN
+    CREATE POLICY "storage_documents_delete_own"
+      ON storage.objects FOR DELETE
+      USING (
+        bucket_id = 'healthflow-documents'
+        AND public.storage_object_owned_by_current_practitioner(name)
+      );
+  END IF;
+END
+$policy$;

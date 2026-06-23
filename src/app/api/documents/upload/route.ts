@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-
-async function getPractitionerId(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await supabase
-    .from("profiles").select("id").eq("user_id", user.id).single();
-  return profile?.id ?? null;
-}
+import {
+  assertPatientOwnedByPractitioner,
+  getPractitionerId,
+} from "@/lib/api/practitioner";
+import { buildDocumentStoragePath } from "@/lib/storage/document-path";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -27,8 +24,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "File and patient_id required" }, { status: 400 });
   }
 
-  const ext = file.name.split(".").pop();
-  const filePath = `${practitionerId}/${patientId}/${Date.now()}_${docType}.${ext}`;
+  const ownsPatient = await assertPatientOwnedByPractitioner(
+    supabase,
+    patientId,
+    practitionerId
+  );
+  if (!ownsPatient) {
+    return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+  }
+
+  const filePath = buildDocumentStoragePath(
+    practitionerId,
+    patientId,
+    file.name,
+    docType
+  );
 
   const arrayBuffer = await file.arrayBuffer();
   const { error: uploadError } = await supabase.storage
@@ -58,6 +68,7 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
+    await supabase.storage.from("healthflow-documents").remove([filePath]);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 

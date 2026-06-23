@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getPractitionerId } from "@/lib/api/practitioner";
+import { pickAppointmentUpdates } from "@/lib/api/appointment-fields";
 
 export async function PUT(
   request: Request,
@@ -7,12 +9,20 @@ export async function PUT(
 ) {
   const { id } = await params;
   const supabase = await createClient();
+  const practitionerId = await getPractitionerId(supabase);
+
+  if (!practitionerId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await request.json();
+  const updates = pickAppointmentUpdates(body as Record<string, unknown>);
 
   const { data, error } = await supabase
     .from("appointments")
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("practitioner_id", practitionerId)
     .select("*, patient:patients(*)")
     .single();
 
@@ -20,12 +30,11 @@ export async function PUT(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (body.status === "completed") {
+  if (updates.status === "completed") {
     await supabase
       .from("patients")
       .update({
         last_appointment_date: data.date_time.split("T")[0],
-        total_appointments: (data.patient?.total_appointments ?? 0) + 1,
       })
       .eq("id", data.patient_id);
   }
@@ -39,8 +48,17 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const supabase = await createClient();
+  const practitionerId = await getPractitionerId(supabase);
 
-  const { error } = await supabase.from("appointments").delete().eq("id", id);
+  if (!practitionerId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { error } = await supabase
+    .from("appointments")
+    .delete()
+    .eq("id", id)
+    .eq("practitioner_id", practitionerId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

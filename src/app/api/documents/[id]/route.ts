@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-
-async function getPractitionerId(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await supabase
-    .from("profiles").select("id").eq("user_id", user.id).single();
-  return profile?.id ?? null;
-}
+import { getPractitionerId } from "@/lib/api/practitioner";
 
 export async function DELETE(
   _request: Request,
@@ -20,13 +13,22 @@ export async function DELETE(
   if (!practitionerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: doc } = await supabase
-    .from("documents").select("file_path").eq("id", id).single();
+    .from("documents")
+    .select("file_path")
+    .eq("id", id)
+    .eq("practitioner_id", practitionerId)
+    .single();
 
   if (doc?.file_path) {
     await supabase.storage.from("healthflow-documents").remove([doc.file_path]);
   }
 
-  const { error } = await supabase.from("documents").delete().eq("id", id);
+  const { error } = await supabase
+    .from("documents")
+    .delete()
+    .eq("id", id)
+    .eq("practitioner_id", practitionerId);
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({ success: true });

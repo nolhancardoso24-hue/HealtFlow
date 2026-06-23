@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { SPECIALTIES, SESSION_DURATIONS, DAYS_OF_WEEK } from "@/lib/constants";
+import { BillingCard } from "@/components/settings/billing-card";
 import type { Profile } from "@/types/database";
 
 type SettingsProfile = Partial<Profile> & {
@@ -23,10 +24,14 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    loadProfile();
+  }, []);
+
+  function loadProfile() {
     fetch("/api/profile")
       .then((r) => r.json())
       .then(setProfile);
-  }, []);
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -199,6 +204,8 @@ export default function SettingsPage() {
           {loading ? "Sauvegarde..." : "Sauvegarder"}
         </Button>
       </form>
+
+      <BillingCard onProfileRefresh={loadProfile} />
 
       <Card>
         <CardHeader>

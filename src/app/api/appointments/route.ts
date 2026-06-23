@@ -1,20 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-
-async function getPractitionerId(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  return profile?.id ?? null;
-}
+import {
+  assertPatientOwnedByPractitioner,
+  getPractitionerId,
+} from "@/lib/api/practitioner";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -55,6 +44,19 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
+
+  if (!body.patient_id || !body.date_time) {
+    return NextResponse.json({ error: "patient_id and date_time required" }, { status: 400 });
+  }
+
+  const ownsPatient = await assertPatientOwnedByPractitioner(
+    supabase,
+    body.patient_id,
+    practitionerId
+  );
+  if (!ownsPatient) {
+    return NextResponse.json({ error: "Patient not found" }, { status: 404 });
+  }
 
   const { data, error } = await supabase
     .from("appointments")

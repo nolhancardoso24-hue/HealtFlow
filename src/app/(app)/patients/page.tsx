@@ -100,11 +100,13 @@ export default function PatientsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold">Patients</h2>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger>
-            <Button className="bg-[#0066CC] hover:bg-[#0052a3]">
-              <Plus className="mr-2 h-4 w-4" />
-              Ajouter patient
-            </Button>
+          <DialogTrigger
+            render={
+              <Button className="bg-[#0066CC] hover:bg-[#0052a3]" />
+            }
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Ajouter patient
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>

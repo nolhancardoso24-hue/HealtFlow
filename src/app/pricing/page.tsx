@@ -2,7 +2,6 @@
 
 import { useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { Heart, Check, X, Zap, Shield, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -139,7 +138,6 @@ function PricingCard({
 }
 
 function PricingContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const isExpired = searchParams.get("expired") === "true";
 
@@ -149,21 +147,20 @@ function PricingContent() {
   async function handleSelect(planId: string) {
     setLoading(planId);
     try {
-      const res = await fetch("/api/billing/upgrade", {
+      const res = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: planId, interval: annual ? "annual" : "monthly" }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        toast.error(data.error ?? "Erreur lors de l'activation");
+      const data = await res.json();
+
+      if (!res.ok || !data.url) {
+        toast.error(data.error ?? "Erreur lors de la redirection vers Stripe");
         return;
       }
 
-      toast.success("Abonnement activé ! Bienvenue dans HealthFlow Pro.");
-      router.push("/dashboard");
-      router.refresh();
+      window.location.href = data.url;
     } catch {
       toast.error("Une erreur est survenue");
     } finally {

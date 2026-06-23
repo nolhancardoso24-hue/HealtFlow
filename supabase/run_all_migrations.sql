@@ -1,6 +1,6 @@
 -- HealthFlow — Exécuter ce fichier en entier dans le SQL Editor Supabase
 -- Projet: cegeszrxfocrhcvcvqyr
--- ⚠️  Exécuter dans l'ordre: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008
+-- ⚠️  Exécuter dans l'ordre: 001 → 002 → 003 → 004 → 005 → 006 → 007 → 008 → 009
 
 -- Copier-coller chaque fichier migrations/ dans le SQL Editor:
 -- 1. supabase/migrations/001_initial_schema.sql
@@ -11,3 +11,4 @@
 -- 6. supabase/migrations/006_appointments_enhancement.sql
 -- 7. supabase/migrations/007_complete_rls.sql
 -- 8. supabase/migrations/008_storage_rls.sql
+-- 9. supabase/migrations/009_profile_billing_protection.sql

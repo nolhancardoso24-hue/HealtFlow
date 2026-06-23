@@ -22,10 +22,7 @@ export async function POST(request: Request) {
         first_name: body.first_name || "Praticien",
         last_name: body.last_name || "",
         specialty: body.specialty || "Autre",
-        // Le trigger SQL initialise trial_ends_at et subscription_status
-        // mais on le garantit aussi ici en cas de conflit
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-        subscription_status: "trialing",
+        // Billing : initialisé par handle_new_user (004) ou protect_profile_billing_fields (009)
       },
       { onConflict: "user_id", ignoreDuplicates: true }
     )

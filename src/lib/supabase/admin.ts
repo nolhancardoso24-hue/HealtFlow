@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
+/** Server-only — ne jamais importer depuis un composant client. */
 export function createAdminClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
