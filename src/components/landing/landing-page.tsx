@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Heart, Calendar, Users, Bot, Shield, ArrowRight } from "lucide-react";
+import { Heart, Calendar, Users, Bot, Shield, ArrowRight, Check } from "lucide-react";
 
 const features = [
   {
@@ -26,7 +26,27 @@ const features = [
   },
 ];
 
-import { LandingPricing } from "@/components/landing/landing-pricing";
+const plans = [
+  {
+    name: "Free",
+    price: "0€",
+    period: "/mois",
+    features: ["1 praticien", "100 patients max", "Fonctions de base"],
+  },
+  {
+    name: "Starter",
+    price: "29€",
+    period: "/mois",
+    popular: true,
+    features: ["300 patients", "Toutes les fonctionnalités", "Rappels email"],
+  },
+  {
+    name: "Pro",
+    price: "79€",
+    period: "/mois",
+    features: ["1000 patients", "API & intégrations", "Support prioritaire"],
+  },
+];
 
 export function LandingPage() {
   return (
@@ -105,7 +125,51 @@ export function LandingPage() {
         </div>
       </section>
 
-      <LandingPricing />
+      <section id="pricing" className="py-20">
+        <div className="mx-auto max-w-6xl px-4">
+          <h2 className="text-center text-3xl font-bold">Tarifs simples</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-center text-muted-foreground">
+            Commencez gratuitement, évoluez quand votre cabinet grandit.
+          </p>
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {plans.map((plan) => (
+              <div
+                key={plan.name}
+                className={`rounded-xl border p-6 ${plan.popular ? "border-[#0066CC] shadow-lg ring-2 ring-[#0066CC]/20" : "bg-white"}`}
+              >
+                {plan.popular && (
+                  <span className="mb-4 inline-block rounded-full bg-[#10B981] px-3 py-1 text-xs font-medium text-white">
+                    Populaire
+                  </span>
+                )}
+                <h3 className="text-xl font-bold">{plan.name}</h3>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold">{plan.price}</span>
+                  <span className="text-muted-foreground">{plan.period}</span>
+                </div>
+                <ul className="mt-6 space-y-3">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-[#10B981]" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/signup"
+                  className={cn(
+                    buttonVariants({ variant: plan.popular ? "default" : "outline" }),
+                    "mt-6 w-full",
+                    plan.popular && "bg-[#0066CC] hover:bg-[#0052a3]"
+                  )}
+                >
+                  Commencer
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <footer className="border-t bg-slate-50 py-12">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 md:flex-row">

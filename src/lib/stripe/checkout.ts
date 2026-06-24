@@ -26,8 +26,8 @@ export async function createSubscriptionCheckoutSession(params: {
       customer_email: params.userEmail,
       client_reference_id: params.userId,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${appUrl}/settings/subscription?billing=success`,
-      cancel_url: `${appUrl}/settings/subscription?billing=cancelled`,
+      success_url: `${appUrl}/settings?billing=success`,
+      cancel_url: `${appUrl}/settings?billing=cancelled`,
       metadata: {
         user_id: params.userId,
         profile_id: params.profileId,

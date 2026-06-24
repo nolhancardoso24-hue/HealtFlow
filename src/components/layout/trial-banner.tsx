@@ -45,7 +45,7 @@ export function TrialBanner({ daysLeft }: TrialBannerProps) {
       </div>
 
       <Link
-        href="/settings/subscription"
+        href="/pricing"
         className={cn(
           buttonVariants({ size: "sm" }),
           "shrink-0 gap-1.5",
