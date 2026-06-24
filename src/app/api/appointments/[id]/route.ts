@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getPractitionerId } from "@/lib/api/practitioner";
+import { requireActiveSubscription } from "@/lib/api/require-subscription";
 import { pickAppointmentUpdates } from "@/lib/api/appointment-fields";
 
 export async function PUT(
@@ -9,11 +9,9 @@ export async function PUT(
 ) {
   const { id } = await params;
   const supabase = await createClient();
-  const practitionerId = await getPractitionerId(supabase);
-
-  if (!practitionerId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
+  const { practitionerId } = access;
 
   const body = await request.json();
   const updates = pickAppointmentUpdates(body as Record<string, unknown>);
@@ -48,11 +46,9 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const supabase = await createClient();
-  const practitionerId = await getPractitionerId(supabase);
-
-  if (!practitionerId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
+  const { practitionerId } = access;
 
   const { error } = await supabase
     .from("appointments")

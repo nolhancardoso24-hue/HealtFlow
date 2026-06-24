@@ -2,17 +2,15 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
   assertPatientOwnedByPractitioner,
-  getPractitionerId,
 } from "@/lib/api/practitioner";
+import { requireActiveSubscription } from "@/lib/api/require-subscription";
 import { buildDocumentStoragePath } from "@/lib/storage/document-path";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const practitionerId = await getPractitionerId(supabase);
-
-  if (!practitionerId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
+  const { practitionerId } = access;
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
@@ -77,10 +75,9 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const practitionerId = await getPractitionerId(supabase);
-  if (!practitionerId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
+  const { practitionerId } = access;
 
   const { searchParams } = new URL(request.url);
   const patientId = searchParams.get("patient_id");

@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveSubscription } from "@/lib/api/require-subscription";
 import { summarizeSession } from "@/lib/ai/claude";
 import { calculateAge } from "@/lib/segmentation";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
 
   const { appointment_id } = await request.json();
 

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveSubscription } from "@/lib/api/require-subscription";
 import { streamChat } from "@/lib/ai/claude";
 import { AI_SYSTEM_PROMPT } from "@/lib/ai/prompts";
 import { summarizeSession, suggestQuestions, analyzeRiskPatients } from "@/lib/ai/claude";
@@ -6,26 +7,16 @@ import { calculateAge } from "@/lib/segmentation";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) {
+    return new Response(access.response.status === 403 ? "Subscription required" : "Unauthorized", {
+      status: access.response.status,
+    });
   }
 
   const { message } = await request.json();
   const lower = message.toLowerCase();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, first_name, last_name")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!profile) {
-    return new Response("Profile not found", { status: 404 });
-  }
+  const profile = access.profile;
 
   const contextMessage = message;
 

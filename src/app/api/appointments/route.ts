@@ -2,16 +2,14 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import {
   assertPatientOwnedByPractitioner,
-  getPractitionerId,
 } from "@/lib/api/practitioner";
+import { requireActiveSubscription } from "@/lib/api/require-subscription";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const practitionerId = await getPractitionerId(supabase);
-
-  if (!practitionerId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
+  const { practitionerId } = access;
 
   const { searchParams } = new URL(request.url);
   const dateFrom = searchParams.get("date_from");
@@ -37,11 +35,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const practitionerId = await getPractitionerId(supabase);
-
-  if (!practitionerId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
+  const { practitionerId } = access;
 
   const body = await request.json();
 

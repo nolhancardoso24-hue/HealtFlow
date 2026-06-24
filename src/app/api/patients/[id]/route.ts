@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveSubscription } from "@/lib/api/require-subscription";
 import { updatePatientTags } from "@/lib/segmentation";
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const supabase = await createClient();
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
 
   const { data: patient, error } = await supabase
     .from("patients")
     .select("*")
     .eq("id", id)
+    .eq("practitioner_id", access.practitionerId)
     .single();
 
   if (error) {
@@ -33,6 +38,9 @@ export async function PUT(
 ) {
   const { id } = await params;
   const supabase = await createClient();
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
+
   const body = await request.json();
 
   const { tags, age_group } = updatePatientTags({
@@ -50,6 +58,7 @@ export async function PUT(
       updated_at: new Date().toISOString(),
     })
     .eq("id", id)
+    .eq("practitioner_id", access.practitionerId)
     .select()
     .single();
 
@@ -66,8 +75,14 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const supabase = await createClient();
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
 
-  const { error } = await supabase.from("patients").delete().eq("id", id);
+  const { error } = await supabase
+    .from("patients")
+    .delete()
+    .eq("id", id)
+    .eq("practitioner_id", access.practitionerId);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

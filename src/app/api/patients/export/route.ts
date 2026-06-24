@@ -1,22 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { calculateAge } from "@/lib/segmentation";
-
-async function getPractitionerId(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await supabase
-    .from("profiles").select("id").eq("user_id", user.id).single();
-  return profile?.id ?? null;
-}
+import { requireActiveSubscription } from "@/lib/api/require-subscription";
 
 export async function GET() {
   const supabase = await createClient();
-  const practitionerId = await getPractitionerId(supabase);
-
-  if (!practitionerId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
+  const { practitionerId } = access;
 
   const { data: patients, error } = await supabase
     .from("patients")

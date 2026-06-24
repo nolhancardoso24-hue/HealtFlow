@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getBillingState } from "@/lib/billing";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -56,10 +57,41 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  if (user && isProtected) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status, trial_ends_at")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profile && getBillingState(profile).isExpired) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/pricing";
+      url.searchParams.set("expired", "true");
+      return NextResponse.redirect(url);
+    }
+  }
+
   if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  const isOnboarding = request.nextUrl.pathname.startsWith("/onboarding");
+  if (user && isOnboarding) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status, trial_ends_at, onboarding_completed")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profile && getBillingState(profile).isExpired) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/pricing";
+      url.searchParams.set("expired", "true");
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

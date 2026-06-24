@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getPractitionerId } from "@/lib/api/practitioner";
+import { requireActiveSubscription } from "@/lib/api/require-subscription";
 
 export async function DELETE(
   _request: Request,
@@ -8,9 +8,9 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const supabase = await createClient();
-  const practitionerId = await getPractitionerId(supabase);
-
-  if (!practitionerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const access = await requireActiveSubscription(supabase);
+  if (!access.ok) return access.response;
+  const { practitionerId } = access;
 
   const { data: doc } = await supabase
     .from("documents")
