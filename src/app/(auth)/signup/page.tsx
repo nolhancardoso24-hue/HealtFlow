@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Heart, ShieldCheck } from "lucide-react";
+import { Heart, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { SPECIALTIES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -78,6 +78,8 @@ export default function SignupPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   function update(field: keyof FormState, value: string | boolean) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -232,34 +234,54 @@ export default function SignupPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <RequiredLabel htmlFor="password">Mot de passe</RequiredLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => update("password", e.target.value)}
-                  placeholder="8 caractères min."
-                  autoComplete="new-password"
-                  minLength={8}
-                  aria-invalid={!!errors.password}
-                  className={cn(errors.password && "border-red-500 focus-visible:ring-red-500/30")}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => update("password", e.target.value)}
+                    placeholder="8 caractères min."
+                    autoComplete="new-password"
+                    minLength={8}
+                    aria-invalid={!!errors.password}
+                    className={cn("pr-10", errors.password && "border-red-500 focus-visible:ring-red-500/30")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {errors.password && (
                   <p className="text-xs text-red-500">{errors.password}</p>
                 )}
               </div>
               <div className="space-y-2">
                 <RequiredLabel htmlFor="confirmPassword">Confirmer</RequiredLabel>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={form.confirmPassword}
-                  onChange={(e) => update("confirmPassword", e.target.value)}
-                  placeholder="Répétez le mot de passe"
-                  autoComplete="new-password"
-                  minLength={8}
-                  aria-invalid={!!errors.confirmPassword}
-                  className={cn(errors.confirmPassword && "border-red-500 focus-visible:ring-red-500/30")}
-                />
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={form.confirmPassword}
+                    onChange={(e) => update("confirmPassword", e.target.value)}
+                    placeholder="Répétez le mot de passe"
+                    autoComplete="new-password"
+                    minLength={8}
+                    aria-invalid={!!errors.confirmPassword}
+                    className={cn("pr-10", errors.confirmPassword && "border-red-500 focus-visible:ring-red-500/30")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showConfirmPassword ? "Masquer la confirmation" : "Afficher la confirmation"}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {errors.confirmPassword && (
                   <p className="text-xs text-red-500">{errors.confirmPassword}</p>
                 )}
