@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe/client";
+import { getStripeConfigStatus } from "@/lib/stripe/config";
 import { stripeLog, stripeLogError } from "@/lib/stripe/logger";
 import {
   syncProfileFromCheckoutSession,
@@ -10,7 +11,9 @@ import {
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  stripeLog("webhook route hit", getStripeConfigStatus());
+
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
   if (!webhookSecret) {
     stripeLogError("webhook misconfigured", new Error("STRIPE_WEBHOOK_SECRET missing"));
     return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });

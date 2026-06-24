@@ -1,9 +1,35 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSubscriptionCheckoutSession } from "@/lib/stripe/checkout";
+import {
+  getSelectedPriceIdDebug,
+  getStripeConfigStatus,
+  getStripePriceIdsForLog,
+  previewStripeSecretKey,
+} from "@/lib/stripe/config";
+import { parseStripeError, stripeErrorToLogObject, toPublicStripeErrorMessage } from "@/lib/stripe/errors";
 import { stripeLog, stripeLogError } from "@/lib/stripe/logger";
 
+export const runtime = "nodejs";
+
+function logCheckoutDebug(
+  step: string,
+  extra?: Record<string, string | number | boolean | null | undefined>
+) {
+  stripeLog(`[debug] ${step}`, extra);
+}
+
 export async function POST(request: Request) {
+  const secretKey = previewStripeSecretKey();
+  const priceIds = getStripePriceIdsForLog();
+
+  logCheckoutDebug("create-checkout-session — config", {
+    stripe_secret_key_defined: secretKey.defined,
+    stripe_secret_key_prefix: secretKey.prefix,
+    ...priceIds,
+    ...getStripeConfigStatus(),
+  });
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -20,6 +46,15 @@ export async function POST(request: Request) {
   if (!["pro", "starter"].includes(plan)) {
     return NextResponse.json({ error: "Plan invalide" }, { status: 400 });
   }
+
+  const selectedPrice = getSelectedPriceIdDebug(plan, interval);
+  logCheckoutDebug("create-checkout-session — plan sélectionné", {
+    user_id: user.id,
+    plan,
+    interval,
+    price_env_key: selectedPrice.env_key,
+    price_id: selectedPrice.price_id,
+  });
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -44,6 +79,7 @@ export async function POST(request: Request) {
       plan,
       interval,
       profile_id: profile.id,
+      price_id: selectedPrice.price_id,
     });
 
     const session = await createSubscriptionCheckoutSession({
@@ -55,8 +91,18 @@ export async function POST(request: Request) {
     });
 
     if (!session.url) {
+      logCheckoutDebug("create-checkout-session — session sans URL", {
+        session_id: session.id,
+      });
       return NextResponse.json({ error: "Impossible de créer la session Stripe" }, { status: 500 });
     }
+
+    logCheckoutDebug("create-checkout-session — succès", {
+      user_id: user.id,
+      plan,
+      session_id: session.id,
+      price_id: selectedPrice.price_id,
+    });
 
     stripeLog("checkout session created", {
       user_id: user.id,
@@ -66,8 +112,37 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    stripeLogError("checkout session failed", err, { user_id: user.id, plan });
-    const message = err instanceof Error ? err.message : "Erreur Stripe";
+    const parsed = parseStripeError(err);
+    const stripeErrorLog = stripeErrorToLogObject(err);
+
+    logCheckoutDebug("create-checkout-session — erreur Stripe", {
+      user_id: user.id,
+      plan,
+      interval,
+      price_id: selectedPrice.price_id,
+      stripe_secret_key_defined: secretKey.defined,
+      stripe_secret_key_prefix: secretKey.prefix,
+      error_message: parsed.message,
+      stripe_type: parsed.type ?? null,
+      stripe_code: parsed.code ?? null,
+      stripe_status: parsed.statusCode ?? null,
+      stripe_request_id: parsed.requestId ?? null,
+      is_connection_error: parsed.isConnectionError,
+    });
+
+    console.error("[stripe] [debug] create-checkout-session — erreur complète", stripeErrorLog);
+
+    stripeLogError("checkout session failed", err, {
+      user_id: user.id,
+      plan,
+      interval,
+      price_id: selectedPrice.price_id,
+      stripe_type: parsed.type,
+      stripe_code: parsed.code,
+      stripe_request_id: parsed.requestId,
+    });
+
+    const message = toPublicStripeErrorMessage(err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

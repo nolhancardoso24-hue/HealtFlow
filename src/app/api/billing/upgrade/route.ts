@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createSubscriptionCheckoutSession } from "@/lib/stripe/checkout";
+import { getStripeConfigStatus } from "@/lib/stripe/config";
+import { toPublicStripeErrorMessage } from "@/lib/stripe/errors";
+import { stripeLog, stripeLogError } from "@/lib/stripe/logger";
+
+export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  stripeLog("billing upgrade route hit", getStripeConfigStatus());
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,6 +43,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    stripeLog("create checkout session (billing)", {
+      user_id: user.id,
+      plan,
+      interval: interval ?? "monthly",
+    });
+
     const session = await createSubscriptionCheckoutSession({
       userId: user.id,
       userEmail: user.email,
@@ -51,7 +63,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Erreur Stripe";
+    stripeLogError("billing upgrade failed", err, { user_id: user.id, plan });
+    const message = toPublicStripeErrorMessage(err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -1,15 +1,34 @@
 import Stripe from "stripe";
+import { getStripeConfigStatus, validateStripeSecretKey } from "@/lib/stripe/config";
+import { stripeLog } from "@/lib/stripe/logger";
 
 let stripe: Stripe | null = null;
+let initializedKey: string | null = null;
 
+/**
+ * Client Stripe singleton — server-side uniquement.
+ * Valide STRIPE_SECRET_KEY à chaque première utilisation (ou si la clé change).
+ */
 export function getStripe(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) {
-    throw new Error("STRIPE_SECRET_KEY is not configured");
-  }
+  const key = validateStripeSecretKey();
 
-  if (!stripe) {
-    stripe = new Stripe(key, { typescript: true });
+  if (!stripe || initializedKey !== key) {
+    stripeLog("initializing Stripe client", getStripeConfigStatus());
+
+    stripe = new Stripe(key, {
+      typescript: true,
+      maxNetworkRetries: 2,
+      timeout: 20_000,
+      appInfo: {
+        name: "HealthFlow",
+        version: "0.1.0",
+      },
+    });
+
+    initializedKey = key;
+    stripeLog("Stripe client ready", {
+      mode: key.startsWith("sk_live_") ? "live" : "test",
+    });
   }
 
   return stripe;
@@ -28,9 +47,18 @@ export function getStripePriceId(
         ? "STRIPE_PRICE_ID_STARTER_ANNUAL"
         : "STRIPE_PRICE_ID_STARTER";
 
-  const priceId = process.env[envKey];
+  const priceId = process.env[envKey]?.trim();
   if (!priceId) {
-    throw new Error(`${envKey} is not configured`);
+    throw new Error(
+      `${envKey} manquant : ajoutez le Price ID Stripe dans les variables d'environnement (Dashboard Stripe → Products → Pricing).`
+    );
   }
+
+  if (!priceId.startsWith("price_")) {
+    throw new Error(
+      `${envKey} invalide ("${priceId}") : un Price ID Stripe commence par price_.`
+    );
+  }
+
   return priceId;
 }
