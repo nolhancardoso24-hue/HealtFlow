@@ -102,12 +102,12 @@ export default function PatientsPage() {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger
             render={
-              <Button className="bg-[#0066CC] hover:bg-[#0052a3]" />
+              <Button className="bg-[#0066CC] hover:bg-[#0052a3]">
+                <Plus className="mr-2 h-4 w-4" />
+                Ajouter patient
+              </Button>
             }
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Ajouter patient
-          </DialogTrigger>
+          />
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Nouveau patient</DialogTitle>
