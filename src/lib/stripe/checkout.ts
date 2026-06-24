@@ -1,5 +1,5 @@
 import { getStripe, getStripePriceId } from "@/lib/stripe/client";
-import { stripeLog, stripeLogError } from "@/lib/stripe/logger";
+import { stripeLog, stripeLogError, logStripeRawError } from "@/lib/stripe/logger";
 
 export async function createSubscriptionCheckoutSession(params: {
   userId: string;
@@ -49,6 +49,7 @@ export async function createSubscriptionCheckoutSession(params: {
 
     return session;
   } catch (err) {
+    logStripeRawError(err);
     stripeLogError("Stripe API failed", err, {
       method: "checkout.sessions.create",
       plan: params.plan,

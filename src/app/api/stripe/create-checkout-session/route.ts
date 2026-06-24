@@ -7,8 +7,8 @@ import {
   getStripePriceIdsForLog,
   previewStripeSecretKey,
 } from "@/lib/stripe/config";
-import { parseStripeError, stripeErrorToLogObject, toPublicStripeErrorMessage } from "@/lib/stripe/errors";
-import { stripeLog, stripeLogError } from "@/lib/stripe/logger";
+import { parseStripeError, toPublicStripeErrorMessage } from "@/lib/stripe/errors";
+import { logStripeRawError, stripeLog, stripeLogError } from "@/lib/stripe/logger";
 
 export const runtime = "nodejs";
 
@@ -112,8 +112,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
+    logStripeRawError(err);
+
     const parsed = parseStripeError(err);
-    const stripeErrorLog = stripeErrorToLogObject(err);
 
     logCheckoutDebug("create-checkout-session — erreur Stripe", {
       user_id: user.id,
@@ -129,8 +130,6 @@ export async function POST(request: Request) {
       stripe_request_id: parsed.requestId ?? null,
       is_connection_error: parsed.isConnectionError,
     });
-
-    console.error("[stripe] [debug] create-checkout-session — erreur complète", stripeErrorLog);
 
     stripeLogError("checkout session failed", err, {
       user_id: user.id,

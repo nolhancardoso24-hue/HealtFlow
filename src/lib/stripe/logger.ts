@@ -1,6 +1,46 @@
+import Stripe from "stripe";
 import { parseStripeError } from "@/lib/stripe/errors";
 
 const PREFIX = "[stripe]";
+
+/** Log l'erreur Stripe brute — visible dans les logs Vercel. */
+export function logStripeRawError(err: unknown): void {
+  if (err instanceof Stripe.errors.StripeError) {
+    console.error("[stripe raw error]", {
+      type: err.type,
+      code: err.code,
+      message: err.message,
+      requestId: err.requestId,
+      statusCode: err.statusCode,
+      raw: err.raw,
+      stack: err.stack,
+    });
+    return;
+  }
+
+  if (err instanceof Error) {
+    console.error("[stripe raw error]", {
+      type: undefined,
+      code: undefined,
+      message: err.message,
+      requestId: undefined,
+      statusCode: undefined,
+      raw: undefined,
+      stack: err.stack,
+    });
+    return;
+  }
+
+  console.error("[stripe raw error]", {
+    type: undefined,
+    code: undefined,
+    message: String(err),
+    requestId: undefined,
+    statusCode: undefined,
+    raw: undefined,
+    stack: undefined,
+  });
+}
 
 export function stripeLog(
   step: string,

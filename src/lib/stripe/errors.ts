@@ -48,22 +48,26 @@ export function parseStripeError(err: unknown): StripeErrorDetails {
 
 /** Objet complet pour logs debug (erreur Stripe exacte). */
 export function stripeErrorToLogObject(err: unknown): Record<string, unknown> {
-  const parsed = parseStripeError(err);
-  const base: Record<string, unknown> = {
-    message: parsed.message,
-    type: parsed.type ?? null,
-    code: parsed.code ?? null,
-    status_code: parsed.statusCode ?? null,
-    request_id: parsed.requestId ?? null,
-    is_connection_error: parsed.isConnectionError,
-  };
-
-  if (err instanceof Stripe.errors.StripeError && err.raw) {
-    base.raw_type = (err.raw as { type?: string }).type ?? null;
-    base.raw_message = (err.raw as { message?: string }).message ?? null;
+  if (err instanceof Stripe.errors.StripeError) {
+    return {
+      type: err.type,
+      code: err.code,
+      message: err.message,
+      requestId: err.requestId,
+      statusCode: err.statusCode,
+      raw: err.raw,
+      stack: err.stack,
+    };
   }
 
-  return base;
+  if (err instanceof Error) {
+    return {
+      message: err.message,
+      stack: err.stack,
+    };
+  }
+
+  return { message: String(err) };
 }
 
 /** Message utilisateur sans détails sensibles. */
