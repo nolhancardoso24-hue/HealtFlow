@@ -95,13 +95,11 @@ export function DashboardShell({
         <header className="flex h-16 items-center justify-between border-b bg-white px-4 lg:px-8">
           <div className="flex items-center gap-3">
             <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger
-                render={
-                  <Button variant="ghost" size="icon" className="lg:hidden">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                }
-              />
+              <SheetTrigger className="lg:hidden">
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
               <SheetContent side="left" className="w-64 p-0">
                 <div className="flex h-16 items-center gap-2 border-b px-6">
                   <Heart className="h-6 w-6 text-[#0066CC]" />

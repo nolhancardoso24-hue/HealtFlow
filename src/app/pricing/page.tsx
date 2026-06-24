@@ -32,16 +32,6 @@ function PricingCard({
   const isLoading = loading === plan.id;
 
   return (
-    <div className="relative pt-4">
-      {isPopular && (
-        <div className="absolute top-0 left-1/2 z-20 -translate-x-1/2">
-          <Badge className="bg-[#0066CC] px-4 py-1 text-white shadow-md">
-            <Sparkles className="mr-1 h-3 w-3" />
-            Le plus populaire
-          </Badge>
-        </div>
-      )}
-
     <div
       className={cn(
         "relative flex flex-col rounded-2xl border bg-white p-8 shadow-sm transition-all hover:shadow-lg",
@@ -50,6 +40,12 @@ function PricingCard({
           : "border-slate-200"
       )}
     >
+      {isPopular && (
+        <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0066CC] px-4 py-1 text-white shadow-md">
+          <Sparkles className="mr-1 h-3 w-3" />
+          Le plus populaire
+        </Badge>
+      )}
 
       <div className="mb-6">
         <h3 className="flex items-center gap-2 text-xl font-bold text-slate-900">
@@ -95,7 +91,6 @@ function PricingCard({
           </>
         )}
       </Button>
-    </div>
     </div>
   );
 }
@@ -182,7 +177,7 @@ function PricingContent() {
           )}
         </div>
 
-        <div className="grid items-center gap-8 pt-4 md:grid-cols-2">
+        <div className="grid items-center gap-8 md:grid-cols-2">
           {sortedPlans.map((plan) => (
             <PricingCard
               key={plan.id}

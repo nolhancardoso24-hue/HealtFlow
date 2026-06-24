@@ -23,8 +23,7 @@ export default function TermsPage() {
         </p>
         <h2 className="text-xl font-semibold text-foreground">Abonnement</h2>
         <p>
-          Les tarifs Starter (29€/mois ou 330€/an) et Pro (79€/mois ou 853€/an) sont
-          décrits sur la page d&apos;accueil et la page tarifs. L&apos;abonnement
+          Les tarifs Free, Starter et Pro sont décrits sur la page d&apos;accueil. L&apos;abonnement
           peut être résilié à tout moment.
         </p>
       </div>
