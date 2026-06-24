@@ -1,60 +1,68 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getBillingState } from "@/lib/billing";
+import { getSupabaseEnv } from "@/lib/supabase/env";
+
+function withSupabaseCookies(from: NextResponse, to: NextResponse) {
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie.name, cookie.value, cookie);
+  });
+  return to;
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const { url: supabaseUrl, anonKey: supabaseKey, isConfigured } = getSupabaseEnv();
 
-  // Laisser passer sans auth si les clés ne sont pas encore configurées
-  if (!supabaseUrl || !supabaseKey || supabaseUrl === "your-supabase-url") {
+  if (!isConfigured) {
     return supabaseResponse;
   }
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseKey,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
+
   const isAuthPage =
-    request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/signup") ||
-    request.nextUrl.pathname.startsWith("/forgot-password");
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password");
+
+  const isAuthCallback = pathname.startsWith("/auth/callback");
 
   const isProtected =
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/patients") ||
-    request.nextUrl.pathname.startsWith("/calendar") ||
-    request.nextUrl.pathname.startsWith("/booking") ||
-    request.nextUrl.pathname.startsWith("/ai") ||
-    request.nextUrl.pathname.startsWith("/settings");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/patients") ||
+    pathname.startsWith("/calendar") ||
+    pathname.startsWith("/booking") ||
+    pathname.startsWith("/ai") ||
+    pathname.startsWith("/settings");
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return withSupabaseCookies(
+      supabaseResponse,
+      NextResponse.redirect(url)
+    );
   }
 
   if (user && isProtected) {
@@ -68,17 +76,23 @@ export async function updateSession(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/pricing";
       url.searchParams.set("expired", "true");
-      return NextResponse.redirect(url);
+      return withSupabaseCookies(
+        supabaseResponse,
+        NextResponse.redirect(url)
+      );
     }
   }
 
-  if (user && isAuthPage) {
+  if (user && isAuthPage && !isAuthCallback) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return withSupabaseCookies(
+      supabaseResponse,
+      NextResponse.redirect(url)
+    );
   }
 
-  const isOnboarding = request.nextUrl.pathname.startsWith("/onboarding");
+  const isOnboarding = pathname.startsWith("/onboarding");
   if (user && isOnboarding) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -90,7 +104,10 @@ export async function updateSession(request: NextRequest) {
       const url = request.nextUrl.clone();
       url.pathname = "/pricing";
       url.searchParams.set("expired", "true");
-      return NextResponse.redirect(url);
+      return withSupabaseCookies(
+        supabaseResponse,
+        NextResponse.redirect(url)
+      );
     }
   }
 

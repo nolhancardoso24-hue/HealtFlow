@@ -107,6 +107,7 @@ export default function SignupPage() {
       email: form.email.trim(),
       password: form.password,
       options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=/onboarding`,
         data: {
           first_name: form.firstName.trim(),
           last_name: form.lastName.trim(),
