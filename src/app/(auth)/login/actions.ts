@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getSupabaseEnv } from "@/lib/supabase/env";
 
 export type LoginState = {
   error?: string;
@@ -32,13 +31,6 @@ export async function loginAction(
 
   if (!email || !password) {
     return { error: "Email et mot de passe requis." };
-  }
-
-  if (!getSupabaseEnv().isConfigured) {
-    return {
-      error:
-        "Configuration Supabase manquante sur le serveur. Vérifiez NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY.",
-    };
   }
 
   const supabase = await createClient();
