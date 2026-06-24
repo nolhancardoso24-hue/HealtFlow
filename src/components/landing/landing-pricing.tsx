@@ -35,26 +35,29 @@ export function LandingPricing() {
           </p>
         )}
 
-        <div className="mt-12 grid items-center gap-6 md:grid-cols-2 md:gap-8">
+        <div className="mt-12 grid items-center gap-6 pt-4 md:grid-cols-2 md:gap-8">
           {sortedPlans.map((plan) => {
             const isPopular = plan.id === "pro";
 
             return (
+              <div key={plan.id} className="relative pt-4">
+                {isPopular && (
+                  <div className="absolute top-0 left-1/2 z-20 -translate-x-1/2">
+                    <Badge className="bg-[#0066CC] px-3 text-white shadow">
+                      <Sparkles className="mr-1 h-3 w-3" />
+                      Recommandé
+                    </Badge>
+                  </div>
+                )}
+
               <div
-                key={plan.id}
                 className={cn(
-                  "relative rounded-xl border p-6 transition-all",
+                  "rounded-xl border p-6 transition-all",
                   isPopular
                     ? "z-10 border-[#0066CC] bg-white shadow-xl ring-2 ring-[#0066CC]/25 md:scale-[1.02]"
                     : "bg-white shadow-sm"
                 )}
               >
-                {isPopular && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0066CC] px-3 text-white">
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    Recommandé
-                  </Badge>
-                )}
 
                 <h3 className="flex items-center gap-2 text-xl font-bold">
                   {isPopular && <Zap className="h-5 w-5 text-[#0066CC]" />}
@@ -85,6 +88,7 @@ export function LandingPricing() {
                 >
                   Essai gratuit 14 jours
                 </Link>
+              </div>
               </div>
             );
           })}
