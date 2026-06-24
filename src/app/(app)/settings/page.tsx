@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,29 +8,22 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase/client";
 import { SPECIALTIES, SESSION_DURATIONS, DAYS_OF_WEEK } from "@/lib/constants";
-import { BillingCard } from "@/components/settings/billing-card";
 import type { Profile } from "@/types/database";
 
 type SettingsProfile = Partial<Profile> & {
   email?: string;
 };
 
-export default function SettingsPage() {
-  const router = useRouter();
+export default function ProfileSettingsPage() {
   const [profile, setProfile] = useState<SettingsProfile>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
-
-  function loadProfile() {
     fetch("/api/profile")
       .then((r) => r.json())
       .then(setProfile);
-  }
+  }, []);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -53,12 +45,6 @@ export default function SettingsPage() {
     setLoading(false);
   }
 
-  async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  }
-
   function toggleDay(day: number) {
     const closed = profile.days_closed ?? [];
     setProfile({
@@ -70,13 +56,18 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <h2 className="text-2xl font-bold">Paramètres</h2>
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold text-slate-900">Profil</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Informations personnelles et préférences du cabinet
+        </p>
+      </div>
 
       <form onSubmit={handleSave} className="space-y-6">
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Profil</CardTitle>
+            <CardTitle className="text-base">Identité</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -99,10 +90,14 @@ export default function SettingsPage() {
               <Label>Spécialité</Label>
               <NativeSelect
                 value={profile.specialty ?? ""}
-                onChange={(e) => setProfile({ ...profile, specialty: e.target.value as Profile["specialty"] })}
+                onChange={(e) =>
+                  setProfile({ ...profile, specialty: e.target.value as Profile["specialty"] })
+                }
               >
                 {SPECIALTIES.map((s) => (
-                  <option key={s} value={s}>{s}</option>
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
                 ))}
               </NativeSelect>
             </div>
@@ -125,9 +120,9 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Cabinet</CardTitle>
+            <CardTitle className="text-base">Cabinet</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -152,10 +147,14 @@ export default function SettingsPage() {
               <Label>Durée séance standard</Label>
               <NativeSelect
                 value={String(profile.session_duration_minutes ?? 45)}
-                onChange={(e) => setProfile({ ...profile, session_duration_minutes: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  setProfile({ ...profile, session_duration_minutes: parseInt(e.target.value) })
+                }
               >
                 {SESSION_DURATIONS.map((d) => (
-                  <option key={d} value={String(d)}>{d} min</option>
+                  <option key={d} value={String(d)}>
+                    {d} min
+                  </option>
                 ))}
               </NativeSelect>
             </div>
@@ -176,9 +175,9 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle>Notifications</CardTitle>
+            <CardTitle className="text-base">Notifications</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2">
@@ -200,23 +199,10 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Button type="submit" className="bg-[#0066CC]" disabled={loading}>
+        <Button type="submit" className="bg-[#0066CC] hover:bg-[#0052a3]" disabled={loading}>
           {loading ? "Sauvegarde..." : "Sauvegarder"}
         </Button>
       </form>
-
-      <BillingCard onProfileRefresh={loadProfile} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Compte</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button variant="outline" onClick={handleLogout}>
-            Déconnexion
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }
